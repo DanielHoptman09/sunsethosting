@@ -1,0 +1,762 @@
+# SunsetHosting — Full Website (Frontend + Backend)
+
+This single-file repository contains a complete full-stack website for **SunsetHosting** (Discord Bot Hosting), including a React/Tailwind frontend and a Node.js/Express backend with MongoDB support and Discord OAuth scaffolding.
+
+> Domain: https://sunsethosting.cloud/
+> Brand: SunsetHosting
+> Color theme: Light & Dark (Discord-like) with lots of purple
+
+---
+
+## Project structure (virtual)
+
+```
+sunsethosting/
+├── frontend/
+│   ├── package.json
+│   ├── tailwind.config.cjs
+│   ├── postcss.config.cjs
+│   ├── public/
+│   │   └── index.html
+│   └── src/
+│       ├── main.jsx
+│       ├── App.jsx
+│       ├── index.css
+│       ├── components/
+│       │   ├── Navbar.jsx
+│       │   ├── Footer.jsx
+│       │   ├── Home.jsx
+│       │   ├── Pricing.jsx
+│       │   ├── Features.jsx
+│       │   ├── Contact.jsx
+│       │   ├── Login.jsx
+│       │   └── Dashboard.jsx
+│       └── assets/
+│           └── logo.svg
+
+├── backend/
+│   ├── package.json
+│   ├── server.js
+│   ├── routes/
+│   │   ├── auth.js
+│   │   └── bots.js
+│   ├── models/
+│   │   └── User.js
+│   └── .env.example
+
+└── README.md
+```
+
+---
+
+# README (quick)
+
+1. Clone the repo (or copy files into two folders: `frontend` and `backend`).
+2. Setup backend environment variables (see `backend/.env.example`).
+3. Start MongoDB (local or Atlas) and populate .env.
+4. Install & run backend: `cd backend && npm install && npm run dev`.
+5. Install & run frontend: `cd frontend && npm install && npm run dev`.
+6. For deployment on Hostingr: upload backend to a Node-capable app (they support Node apps), and set environment variables. Serve frontend as static or use Vercel/Netlify and point domain to Hostingr nameservers or add CNAME.
+
+---
+
+# FULL FILES
+
+--- FILE: frontend/package.json ---
+```json
+{
+  "name": "sunsethosting-frontend",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-router-dom": "^6.14.1"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.14",
+    "postcss": "^8.4.21",
+    "tailwindcss": "^3.4.7",
+    "vite": "^5.3.0"
+  }
+}
+```
+
+--- FILE: frontend/tailwind.config.cjs ---
+```js
+module.exports = {
+  content: ["./index.html", "./src/**/*.{js,jsx,ts,tsx}"],
+  darkMode: 'class',
+  theme: {
+    extend: {
+      colors: {
+        sunset: {
+          50: '#f8f5ff',
+          100: '#efe9ff',
+          200: '#dfd1ff',
+          300: '#cbb2ff',
+          400: '#a874ff',
+          500: '#8f40ff',
+          600: '#7a2fe6',
+          700: '#5c26b3',
+          800: '#421b80',
+          900: '#2a1459'
+        }
+      }
+    }
+  },
+  plugins: []
+}
+```
+
+--- FILE: frontend/postcss.config.cjs ---
+```js
+module.exports = {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {}
+  }
+}
+```
+
+--- FILE: frontend/public/index.html ---
+```html
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SunsetHosting</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
+```
+
+--- FILE: frontend/src/main.jsx ---
+```jsx
+import React from 'react'
+import { createRoot } from 'react-dom/client'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import App from './App'
+import './index.css'
+
+createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/*" element={<App/>} />
+      </Routes>
+    </BrowserRouter>
+  </React.StrictMode>
+)
+```
+
+--- FILE: frontend/src/index.css ---
+```css
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --brand: #8f40ff; /* sunset 500 */
+}
+
+body {
+  @apply bg-white text-slate-800;
+}
+
+.dark body {
+  @apply bg-slate-900 text-slate-100;
+}
+
+/* Minimal utility tweaks */
+.container-custom {
+  max-width: 1100px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+```
+
+--- FILE: frontend/src/assets/logo.svg ---
+```svg
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <defs>
+    <linearGradient id="g" x1="0" x2="1">
+      <stop offset="0" stop-color="#8f40ff"/>
+      <stop offset="1" stop-color="#ff70b8"/>
+    </linearGradient>
+  </defs>
+  <circle cx="50" cy="50" r="45" fill="url(#g)" />
+  <text x="50" y="58" font-size="28" text-anchor="middle" fill="#fff" font-family="sans-serif">SH</text>
+</svg>
+```
+
+--- FILE: frontend/src/App.jsx ---
+```jsx
+import React, {useEffect, useState} from 'react'
+import {Routes, Route} from 'react-router-dom'
+import Navbar from './components/Navbar'
+import Footer from './components/Footer'
+import Home from './components/Home'
+import Pricing from './components/Pricing'
+import Features from './components/Features'
+import Contact from './components/Contact'
+import Login from './components/Login'
+import Dashboard from './components/Dashboard'
+
+export default function App(){
+  const [dark, setDark] = useState(false)
+  useEffect(()=>{
+    if(localStorage.getItem('theme') === 'dark' ){
+      document.documentElement.classList.add('dark')
+      setDark(true)
+    }
+  },[])
+  const toggle = ()=>{
+    if(dark){
+      localStorage.setItem('theme','light')
+      document.documentElement.classList.remove('dark')
+      setDark(false)
+    } else {
+      localStorage.setItem('theme','dark')
+      document.documentElement.classList.add('dark')
+      setDark(true)
+    }
+  }
+  return (
+    <div className="min-h-screen flex flex-col">
+      <Navbar toggleTheme={toggle} dark={dark} />
+      <main className="flex-1 container-custom py-12">
+        <Routes>
+          <Route path="/" element={<Home/>} />
+          <Route path="/pricing" element={<Pricing/>} />
+          <Route path="/features" element={<Features/>} />
+          <Route path="/contact" element={<Contact/>} />
+          <Route path="/login" element={<Login/>} />
+          <Route path="/dashboard" element={<Dashboard/>} />
+        </Routes>
+      </main>
+      <Footer />
+    </div>
+  )
+}
+```
+
+--- FILE: frontend/src/components/Navbar.jsx ---
+```jsx
+import React from 'react'
+import { Link } from 'react-router-dom'
+import Logo from '../assets/logo.svg'
+
+export default function Navbar({toggleTheme, dark}){
+  return (
+    <header className="border-b dark:border-slate-700">
+      <div className="container-custom flex items-center justify-between py-4">
+        <Link to="/" className="flex items-center gap-3">
+          <div className="w-10 h-10" dangerouslySetInnerHTML={{__html:Logo}} />
+          <div className="font-semibold">SunsetHosting</div>
+        </Link>
+        <nav className="flex items-center gap-4">
+          <Link to="/features" className="hover:text-sunset-400">Features</Link>
+          <Link to="/pricing" className="hover:text-sunset-400">Pricing</Link>
+          <Link to="/contact" className="hover:text-sunset-400">Contact</Link>
+          <Link to="/login" className="px-3 py-1 border rounded-md">Login</Link>
+          <button onClick={toggleTheme} aria-label="toggle theme" className="ml-2 px-2 py-1 rounded-md">
+            {dark ? 'Light' : 'Dark'}
+          </button>
+        </nav>
+      </div>
+    </header>
+  )
+}
+```
+
+--- FILE: frontend/src/components/Footer.jsx ---
+```jsx
+import React from 'react'
+export default function Footer(){
+  return (
+    <footer className="border-t dark:border-slate-800 py-8 mt-12">
+      <div className="container-custom text-center text-sm">
+        <p>© {new Date().getFullYear()} SunsetHosting — Discord Bot Hosting made simple.</p>
+        <p className="mt-2">Hosted at sunsethosting.cloud</p>
+      </div>
+    </footer>
+  )
+}
+```
+
+--- FILE: frontend/src/components/Home.jsx ---
+```jsx
+import React from 'react'
+
+export default function Home(){
+  return (
+    <section className="grid gap-8">
+      <div className="grid md:grid-cols-2 gap-6 items-center">
+        <div>
+          <h1 className="text-4xl font-extrabold">SunsetHosting — Discord Bot Hosting</h1>
+          <p className="mt-4 text-lg">Reliable hosting, automatic restarts, 24/7 monitoring and a beautiful dashboard — all built for Discord bot developers.</p>
+          <div className="mt-6 flex gap-3">
+            <a className="px-4 py-2 rounded-md bg-sunset-500 text-white" href="/pricing">Get started</a>
+            <a className="px-4 py-2 rounded-md border" href="/features">Learn more</a>
+          </div>
+        </div>
+        <div className="bg-gradient-to-br from-sunset-400 to-sunset-600 rounded-xl p-6 text-white">
+          <h3 className="font-semibold">Why SunsetHosting?</h3>
+          <ul className="mt-4 space-y-2">
+            <li>• Free tier for development bots</li>
+            <li>• Auto-restart & crash recovery</li>
+            <li>• Built-in uptime monitoring</li>
+            <li>• Database support: MongoDB & PostgreSQL</li>
+            <li>• Discord OAuth login & bot manager</li>
+          </ul>
+        </div>
+      </div>
+
+      <div className="grid md:grid-cols-3 gap-6">
+        <div className="p-6 border rounded-md">
+          <h4 className="font-semibold">Auto Restarts</h4>
+          <p className="mt-2 text-sm">When your bot crashes, we automatically restart it — reduce downtime and stay online.</p>
+        </div>
+        <div className="p-6 border rounded-md">
+          <h4 className="font-semibold">Monitoring</h4>
+          <p className="mt-2 text-sm">24/7 monitoring with alerts, logs, and performance metrics.</p>
+        </div>
+        <div className="p-6 border rounded-md">
+          <h4 className="font-semibold">Databases</h4>
+          <p className="mt-2 text-sm">Choose MongoDB or PostgreSQL. Easy connection strings and dashboard setup.</p>
+        </div>
+      </div>
+    </section>
+  )
+}
+```
+
+--- FILE: frontend/src/components/Pricing.jsx ---
+```jsx
+import React from 'react'
+
+const plans = [
+  {name:'Free', price:'Free', bullets:['1 bot','Community support','Auto restart','1 GB storage']},
+  {name:'Pro', price:'$9/mo', bullets:['5 bots','Priority support','Auto restart','10 GB storage','Uptime SLA']},
+  {name:'Enterprise', price:'Contact', bullets:['Custom bots','SLA','Dedicated support','SFTP']}
+]
+
+export default function Pricing(){
+  return (
+    <section>
+      <h2 className="text-3xl font-bold">Pricing</h2>
+      <div className="mt-6 grid md:grid-cols-3 gap-6">
+        {plans.map(p=> (
+          <div key={p.name} className="p-6 border rounded-md">
+            <h3 className="text-xl font-semibold">{p.name}</h3>
+            <p className="mt-2 text-2xl">{p.price}</p>
+            <ul className="mt-4 space-y-1">
+              {p.bullets.map(b => <li key={b}>• {b}</li>)}
+            </ul>
+            <div className="mt-4">
+              <button className="px-4 py-2 rounded-md bg-sunset-500 text-white">Choose</button>
+            </div>
+          </div>
+        ))}
+      </div>
+    </section>
+  )
+}
+```
+
+--- FILE: frontend/src/components/Features.jsx ---
+```jsx
+import React from 'react'
+export default function Features(){
+  return (
+    <div>
+      <h2 className="text-3xl font-bold">Features</h2>
+      <div className="mt-6 grid md:grid-cols-2 gap-6">
+        <div className="p-6 border rounded-md">
+          <h4 className="font-semibold">Uptime Monitoring</h4>
+          <p className="mt-2 text-sm">Get ping checks, health checks and metrics. Optional webhook notifications for your team.</p>
+        </div>
+        <div className="p-6 border rounded-md">
+          <h4 className="font-semibold">Auto-restart & Crash Recovery</h4>
+          <p className="mt-2 text-sm">Supervised processes with exponential backoff and alerting.</p>
+        </div>
+        <div className="p-6 border rounded-md">
+          <h4 className="font-semibold">Database Support</h4>
+          <p className="mt-2 text-sm">MongoDB and PostgreSQL connection strings in the dashboard.</p>
+        </div>
+        <div className="p-6 border rounded-md">
+          <h4 className="font-semibold">Discord OAuth & Bot Management</h4>
+          <p className="mt-2 text-sm">Login with Discord, add your bot token to deploy, simple controls to start/stop/view logs.</p>
+        </div>
+      </div>
+    </div>
+  )
+}
+```
+
+--- FILE: frontend/src/components/Contact.jsx ---
+```jsx
+import React, {useState} from 'react'
+
+export default function Contact(){
+  const [sent, setSent] = useState(false)
+  return (
+    <div className="max-w-xl">
+      <h2 className="text-2xl font-bold">Contact & Support</h2>
+      <p className="mt-2">Questions? Send us a message and our support team will reach out.</p>
+      <form onSubmit={(e)=>{e.preventDefault(); setSent(true)}} className="mt-4">
+        <input required placeholder="Name" className="w-full p-2 border rounded-md mb-2" />
+        <input required type="email" placeholder="Email" className="w-full p-2 border rounded-md mb-2" />
+        <textarea required placeholder="How can we help?" className="w-full p-2 border rounded-md mb-2" />
+        <button className="px-4 py-2 rounded-md bg-sunset-500 text-white">Send</button>
+        {sent && <p className="mt-2 text-sm text-green-500">Thanks — message received (demo).</p>}
+      </form>
+    </div>
+  )
+}
+```
+
+--- FILE: frontend/src/components/Login.jsx ---
+```jsx
+import React from 'react'
+
+export default function Login(){
+  const discordAuthUrl = `${import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000'}/auth/discord`;
+  return (
+    <div className="max-w-md">
+      <h2 className="text-2xl font-bold">Login with Discord</h2>
+      <p className="mt-2">Use Discord to sign in and manage your bots.</p>
+      <a className="inline-block mt-4 px-4 py-2 rounded-md bg-sunset-500 text-white" href={discordAuthUrl}>Sign in with Discord</a>
+    </div>
+  )
+}
+```
+
+--- FILE: frontend/src/components/Dashboard.jsx ---
+```jsx
+import React, {useEffect, useState} from 'react'
+
+export default function Dashboard(){
+  const [user, setUser] = useState(null)
+  useEffect(()=>{
+    fetch((import.meta.env.VITE_BACKEND_URL || 'http://localhost:4000') + '/api/me', {credentials: 'include'})
+    .then(r=>r.json()).then(data=>{
+      if(data.user) setUser(data.user)
+    }).catch(()=>{})
+  },[])
+
+  if(!user) return (
+    <div>
+      <h3 className="text-xl font-semibold">Not signed in</h3>
+      <p>Go to <a href="/login" className="text-sunset-500">Login</a> to use the dashboard.</p>
+    </div>
+  )
+
+  return (
+    <div>
+      <h2 className="text-2xl font-bold">Welcome, {user.username}</h2>
+      <p className="mt-2">Manage your bots, view logs, and configure databases.</p>
+      <div className="mt-6 p-4 border rounded-md">
+        <h4 className="font-semibold">Your bots</h4>
+        <p className="mt-2 text-sm">(Demo) No bots yet. Use the API to register a bot and deploy.</p>
+      </div>
+    </div>
+  )
+}
+```
+
+--- FILE: backend/package.json ---
+```json
+{
+  "name": "sunsethosting-backend",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js"
+  },
+  "dependencies": {
+    "axios": "^1.4.0",
+    "cookie-parser": "^1.4.6",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-session": "^1.17.3",
+    "mongoose": "^7.5.1",
+    "node-fetch": "^3.4.1"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.22"
+  }
+}
+```
+
+--- FILE: backend/.env.example ---
+```env
+PORT=4000
+MONGODB_URI=mongodb+srv://<user>:<pass>@cluster0.xxxxx.mongodb.net/sunsethosting?retryWrites=true&w=majority
+SESSION_SECRET=your_random_secret_here
+DISCORD_CLIENT_ID=your_discord_client_id
+DISCORD_CLIENT_SECRET=your_discord_client_secret
+DISCORD_CALLBACK_URL=http://localhost:4000/auth/discord/callback
+FRONTEND_URL=http://localhost:5173
+```
+
+--- FILE: backend/models/User.js ---
+```js
+const mongoose = require('mongoose')
+
+const UserSchema = new mongoose.Schema({
+  discordId: {type: String, required: true, unique: true},
+  username: String,
+  discriminator: String,
+  avatar: String,
+  accessToken: String,
+  refreshToken: String,
+  createdAt: {type: Date, default: Date.now}
+})
+
+module.exports = mongoose.model('User', UserSchema)
+```
+
+--- FILE: backend/routes/auth.js ---
+```js
+const express = require('express')
+const fetch = require('node-fetch')
+const router = express.Router()
+const User = require('../models/User')
+
+// /auth/discord -> redirect to Discord OAuth
+router.get('/discord', (req, res)=>{
+  const clientId = process.env.DISCORD_CLIENT_ID
+  const redirect = encodeURIComponent(process.env.DISCORD_CALLBACK_URL)
+  const scope = encodeURIComponent('identify')
+  const url = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirect}&response_type=code&scope=${scope}`
+  res.redirect(url)
+})
+
+router.get('/discord/callback', async (req, res)=>{
+  const code = req.query.code
+  if(!code) return res.status(400).send('No code')
+  try{
+    const data = new URLSearchParams({
+      client_id: process.env.DISCORD_CLIENT_ID,
+      client_secret: process.env.DISCORD_CLIENT_SECRET,
+      grant_type: 'authorization_code',
+      code,
+      redirect_uri: process.env.DISCORD_CALLBACK_URL
+    })
+    const tokenRes = await fetch('https://discord.com/api/oauth2/token', {method:'POST', body:data})
+    const tokenJson = await tokenRes.json()
+    const access_token = tokenJson.access_token
+    // fetch user
+    const userRes = await fetch('https://discord.com/api/users/@me', {headers: {authorization: `Bearer ${access_token}`}})
+    const userJson = await userRes.json()
+
+    // upsert user
+    const doc = await User.findOneAndUpdate({discordId:userJson.id}, {
+      discordId: userJson.id,
+      username: userJson.username,
+      discriminator: userJson.discriminator,
+      avatar: userJson.avatar,
+      accessToken: access_token,
+      refreshToken: tokenJson.refresh_token
+    }, {upsert:true, new:true})
+
+    // set session cookie
+    req.session.userId = doc._id
+    // redirect to frontend dashboard
+    res.redirect(process.env.FRONTEND_URL + '/dashboard')
+  } catch(err){
+    console.error(err)
+    res.status(500).send('Auth failed')
+  }
+})
+
+module.exports = router
+```
+
+--- FILE: backend/routes/bots.js ---
+```js
+const express = require('express')
+const router = express.Router()
+
+// placeholder bot endpoints for demo
+router.get('/', (req, res)=>{
+  res.json({ok:true, bots:[]})
+})
+
+router.post('/deploy', (req, res)=>{
+  // In real product: validate, create container, store config, start process, add monitoring
+  res.json({ok:true, message:'Deployment queued (demo)'})
+})
+
+module.exports = router
+```
+
+--- FILE: backend/server.js ---
+```js
+require('dotenv').config()
+const express = require('express')
+const mongoose = require('mongoose')
+const session = require('express-session')
+const cors = require('cors')
+const cookieParser = require('cookie-parser')
+
+const authRoutes = require('./routes/auth')
+const botsRoutes = require('./routes/bots')
+const User = require('./models/User')
+
+const app = express()
+const PORT = process.env.PORT || 4000
+
+app.use(express.json())
+app.use(cookieParser())
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'devsecret',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { secure: false }
+}))
+
+app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:5173', credentials: true }))
+
+// connect mongodb
+mongoose.connect(process.env.MONGODB_URI, {useNewUrlParser:true, useUnifiedTopology:true})
+.then(()=>console.log('MongoDB connected'))
+.catch(err=>console.error('MongoDB error', err))
+
+app.use('/auth', authRoutes)
+app.use('/api/bots', botsRoutes)
+
+// simple API to get current user
+app.get('/api/me', async (req, res) =>{
+  if(!req.session.userId) return res.json({user:null})
+  const user = await User.findById(req.session.userId).lean()
+  if(!user) return res.json({user:null})
+  res.json({user: {username: user.username, discordId: user.discordId}})
+})
+
+app.listen(PORT, ()=>{
+  console.log('Server listening on', PORT)
+})
+```
+
+--- FILE: README.md ---
+```md
+# SunsetHosting — Full Stack Example
+
+This repo contains a minimal but complete example of a Discord Bot Hosting frontend (React + Tailwind) and a Node.js backend with Discord OAuth and MongoDB. It's intended as a starting point for SunsetHosting at https://sunsethosting.cloud/
+
+## Features included (demo)
+- Marketing pages: Home, Features, Pricing, Contact
+- Login via Discord OAuth (identify scope)
+- Dashboard stub with /api/me
+- Backend endpoints for bots (placeholder)
+- MongoDB user model and session handling
+
+## Run locally
+1. Backend
+   - `cd backend`
+   - copy `.env.example` to `.env` and fill values
+   - `npm install`
+   - `npm run dev`
+
+2. Frontend
+   - `cd frontend`
+   - `npm install`
+   - `npm run dev`
+
+## Deploying to Hostingr
+- Hostingr supports Node.js apps. Upload the `backend` directory as a Node app and set environment variables shown in `.env.example`.
+- Build the frontend (`npm run build`) and serve the `dist` folder as static files, or host it on a static host (Netlify/Vercel) and point your domain to it.
+- Configure OAuth redirect in Discord Developer Portal to use your production URL: `https://sunsethosting.cloud/auth/discord/callback`
+
+## Next steps to production
+- Implement secure session cookies (secure: true, sameSite, HTTPS)
+- Use production-ready process manager for bots (Docker, systemd, or container-based worker fleet)
+- Add persistent logs, metrics and a queuing system for deployments
+- Harden Discord OAuth, token refresh, and token storage
+
+```
+
+---
+
+# Notes & pointers
+
+- This is a *starter* codebase to quickly boot a hosting platform. Production readiness will need container orchestration (Docker + Kubernetes or ECS), persistent storage, billing integrations, rate limits, and more.
+- Discord OAuth currently only requests `identify` to get user's basic profile. For bot management you may want `bot` OAuth flows or to require the user to supply bot tokens (exercise caution & secure handling).
+
+# License
+
+MIT License
+
+Copyright (c) 2025 SunsetHosting
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+---
+
+# Next Steps — Expanding SunsetHosting
+
+Here’s what you can build next on top of this foundation:
+
+### 1. **Real Bot Hosting (Docker Integration)**
+Integrate a Docker engine or Pterodactyl API to launch containers for user bots. For example:
+```bash
+docker run -d --name user-bot-${id} -v /data/bots/${id}:/app node:18 node bot.js
+```
+You can trigger this from the `/api/bots/deploy` route and store container IDs in MongoDB.
+
+### 2. **Add Billing (Stripe)**
+Connect to Stripe and set up webhooks for subscriptions:
+```bash
+npm install stripe
+```
+Then expose routes `/api/stripe/create-session` and `/api/stripe/webhook` to manage user plans.
+
+### 3. **Production-Ready Deployment**
+- Use **NGINX** as reverse proxy for the Node backend and static frontend.
+- Set environment variables in Hostingr control panel.
+- Use **PM2** or **forever** to keep the backend running.
+- Switch session cookie to secure mode:
+  ```js
+  cookie: { secure: true, sameSite: 'none' }
+  ```
+- Enable HTTPS (Hostingr provides free SSL via Let’s Encrypt).
+
+### 4. **Security Hardening**
+- Encrypt access tokens using AES-256 or store them in a secrets vault.
+- Validate Discord OAuth tokens regularly with `/oauth2/token/revoke`.
+- Add rate limiting to Express routes using `express-rate-limit`.
+
+### 5. **User Dashboard Enhancements**
+- Display bot uptime graphs with **Recharts**.
+- Add Discord-style theming with gradients and animated cards.
+- Show logs and metrics fetched from backend `/api/bots/logs`.
+
+### 6. **Optional Add-ons**
+- Team accounts for multi-user bot management.
+- Database provisioning API (MongoDB Atlas or Railway integration).
+- Email notifications via SendGrid or Resend.
+
+---
+
+✅ **Your website is now complete and ready to deploy on Hostingr!**  
+Would you like me to generate the Docker-based bot hosting backend next (so users can actually run bots)?
